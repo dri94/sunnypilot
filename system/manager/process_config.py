@@ -68,6 +68,32 @@ def use_github_runner(started, params, CP: car.CarParams) -> bool:
 def use_copyparty(started, params, CP: car.CarParams) -> bool:
   return bool(params.get_bool("EnableCopyparty"))
 
+# Network mode constants
+NETWORK_MODE_DEFAULT = 0
+NETWORK_MODE_PRIVACY = 1
+NETWORK_MODE_OFFLINE = 2
+
+def _get_network_mode(params: Params) -> int:
+  mode = params.get("NetworkMode")
+  if mode is None:
+    return NETWORK_MODE_DEFAULT
+  return mode
+
+def not_privacy_mode(started: bool, params: Params, CP: car.CarParams) -> bool:
+  """Returns False in Privacy or Offline mode. Gates uploaders, sentry, stats."""
+  return _get_network_mode(params) < NETWORK_MODE_PRIVACY
+
+def not_offline_mode(started: bool, params: Params, CP: car.CarParams) -> bool:
+  """Returns False in Offline mode. Gates athenad, registration."""
+  return _get_network_mode(params) < NETWORK_MODE_OFFLINE
+
+def updated_with_bypass(started: bool, params: Params, CP: car.CarParams) -> bool:
+  """Gates OTA updates. Off in Offline unless NetworkBypassOTA is set."""
+  mode = _get_network_mode(params)
+  if mode < NETWORK_MODE_OFFLINE:
+    return not started  # original only_offroad behavior
+  return not started and params.get_bool("NetworkBypassOTA")
+
 def sunnylink_ready_shim(started, params, CP: car.CarParams) -> bool:
   """Shim for sunnylink_ready to match the process manager signature."""
   return sunnylink_ready(params)
@@ -145,9 +171,9 @@ procs = [
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC),
-  PythonProcess("uploader", "system.loggerd.uploader", uploader_ready),
-  PythonProcess("statsd", "system.statsd", always_run),
+  PythonProcess("updated", "system.updated.updated", updated_with_bypass, enabled=not PC),
+  PythonProcess("uploader", "system.loggerd.uploader", and_(uploader_ready, not_privacy_mode)),
+  PythonProcess("statsd", "system.statsd", and_(always_run, not_privacy_mode)),
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
 
   # debug procs
