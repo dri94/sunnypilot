@@ -115,6 +115,12 @@ def get_properties() -> tuple[str, str, str]:
 
 
 def init(project: SentryProject) -> bool:
+  # Don't initialize sentry in Privacy or Offline mode
+  params = Params()
+  mode = params.get("NetworkMode")
+  if mode is not None and mode >= 1:  # Privacy or Offline
+    return False
+
   build_metadata = get_build_metadata()
 
   env = build_metadata.channel_type
