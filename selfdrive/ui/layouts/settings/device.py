@@ -27,15 +27,19 @@ DESCRIPTIONS = {
   'driver_camera': tr_noop("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
   'reset_calibration': tr_noop("sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
   'review_guide': tr_noop("Review the rules, features, and limitations of sunnypilot"),
+  'network_mode': tr_noop("Controls network connectivity to external servers. Default: all features enabled. Privacy: no data uploads or crash reports. Offline: all external connections disabled. Requires reboot to apply."),
 }
 
 
 class DeviceLayout(Widget):
+  _NETWORK_MODE_OPTIONS = ["Default", "Privacy", "Offline"]
+
   def __init__(self):
     super().__init__()
 
     self._params = Params()
     self._select_language_dialog: MultiOptionDialog | None = None
+    self._network_mode_dialog: MultiOptionDialog | None = None
     self._fcc_dialog: HtmlModal | None = None
     self._training_guide: TrainingGuide | None = None
 
@@ -67,6 +71,9 @@ class DeviceLayout(Widget):
                   self._on_review_training_guide, enabled=ui_state.is_offroad),
       button_item(lambda: tr("Regulatory"), lambda: tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
       button_item(lambda: tr("Change Language"), lambda: tr("CHANGE"), callback=self._show_language_dialog),
+      button_item(lambda: tr("Network Mode"), lambda: self._network_mode_label(),
+                  lambda: tr(DESCRIPTIONS['network_mode']),
+                  callback=self._show_network_mode_dialog),
       self._power_off_btn,
     ]
     return items
@@ -80,6 +87,31 @@ class DeviceLayout(Widget):
 
   def _render(self, rect):
     self._scroller.render(rect)
+
+  def _network_mode_label(self):
+    mode = self._params.get("NetworkMode")
+    if mode is None:
+      mode = 0
+    return tr(self._NETWORK_MODE_OPTIONS[mode])
+
+  def _show_network_mode_dialog(self):
+    current_mode = self._params.get("NetworkMode")
+    if current_mode is None:
+      current_mode = 0
+
+    def handle_selection(result: DialogResult):
+      if result == DialogResult.CONFIRM and self._network_mode_dialog:
+        selected = self._network_mode_dialog.selection
+        self._params.put("NetworkMode", selected)
+      self._network_mode_dialog = None
+
+    self._network_mode_dialog = MultiOptionDialog(
+      tr("Select Network Mode"),
+      [tr(opt) for opt in self._NETWORK_MODE_OPTIONS],
+      current_mode,
+      callback=handle_selection,
+    )
+    gui_app.push_widget(self._network_mode_dialog)
 
   def _show_language_dialog(self):
     def handle_language_selection(result: DialogResult):
