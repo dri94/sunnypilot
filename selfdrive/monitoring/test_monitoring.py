@@ -51,8 +51,8 @@ always_true = [True] * int(TEST_TIMESPAN / DT_DMON)
 always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
 class TestMonitoring:
-  def _run_seq(self, msgs, interaction, engaged, standstill):
-    DM = DriverMonitoring()
+  def _run_seq(self, msgs, interaction, engaged, standstill, always_on=True):
+    DM = DriverMonitoring(always_on=always_on)
     events = []
     for idx in range(len(msgs)):
       DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], standstill[idx])
@@ -177,7 +177,7 @@ class TestMonitoring:
   # disengaged, always distracted driver
   #  - dm should stay quiet when not engaged
   def test_pure_dashcam_user(self):
-    events, _ = self._run_seq(always_distracted, always_false, always_false, always_false)
+    events, _ = self._run_seq(always_distracted, always_false, always_false, always_false, always_on=False)
     assert sum(len(event) for event in events) == 0
 
   # engaged, car stops at traffic light, down to orange, no action, then car starts moving
