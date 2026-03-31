@@ -251,6 +251,14 @@ def main(exit_event: threading.Event | None = None) -> None:
   while not exit_event.is_set():
     sm.update(0)
     offroad = params.get_bool("IsOffroad")
+
+    # Defense-in-depth: skip uploads in Privacy or Offline mode
+    network_mode = params.get("NetworkMode")
+    if network_mode is not None and network_mode >= 1:
+      if allow_sleep:
+        time.sleep(60 if offroad else 5)
+      continue
+
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
     if network_type == NetworkType.none:
       if allow_sleep:
