@@ -235,12 +235,20 @@ class SunnylinkLayout(Widget):
 
   def _backup_handler(self, dialog_result: int):
     if dialog_result == DialogResult.CONFIRM:
+      # In Offline mode, set bypass param so backup manager can reach the server
+      network_mode = ui_state.params.get("NetworkMode")
+      if network_mode is not None and network_mode >= 2:
+        ui_state.params.put_bool("NetworkBypassBackup", True)
       self._backup_in_progress = True
       self._backup_btn.set_enabled(False)
       ui_state.params.put_bool("BackupManager_CreateBackup", True)
 
   def _restore_handler(self, dialog_result: int):
     if dialog_result == DialogResult.CONFIRM:
+      # In Offline mode, set bypass param so backup manager can reach the server
+      network_mode = ui_state.params.get("NetworkMode")
+      if network_mode is not None and network_mode >= 2:
+        ui_state.params.put_bool("NetworkBypassBackup", True)
       self._restore_in_progress = True
       self._restore_btn.set_enabled(False)
       ui_state.params.put("BackupManager_RestoreVersion", "latest")

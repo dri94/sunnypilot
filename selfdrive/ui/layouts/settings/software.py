@@ -154,6 +154,11 @@ class SoftwareLayout(Widget):
       self._install_btn.set_visible(False)
 
   def _on_download_update(self):
+    # In Offline mode, set bypass param so updated process can start
+    network_mode = ui_state.params.get("NetworkMode")
+    if network_mode is not None and network_mode >= 2:
+      ui_state.params.put_bool("NetworkBypassOTA", True)
+
     # Check if we should start checking or start downloading
     self._download_btn.action_item.set_enabled(False)
     if self._download_btn.action_item.text == tr("CHECK"):
