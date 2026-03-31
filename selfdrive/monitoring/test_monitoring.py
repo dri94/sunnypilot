@@ -205,6 +205,49 @@ class TestMonitoring:
     assert EventName.driverUnresponsive in \
                               events[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
 
+  # DM off (always_on=False), engaged, always distracted
+  #  - should produce no events when DM is disabled
+  def test_dm_off_suppresses_distracted_events(self):
+    DM = DriverMonitoring(always_on=False)
+    events = []
+    for idx in range(len(always_distracted)):
+      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
+      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
+      events.append(DM.current_events)
+    self._assert_no_events(events)
+
+  # DM off (always_on=False), engaged, no face detected
+  #  - should produce no events when DM is disabled
+  def test_dm_off_suppresses_invisible_events(self):
+    DM = DriverMonitoring(always_on=False)
+    events = []
+    for idx in range(len(always_no_face)):
+      DM._update_states(always_no_face[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
+      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
+      events.append(DM.current_events)
+    self._assert_no_events(events)
+
+  # DM off (always_on=False), engaged, distracted past terminal threshold
+  #  - should never set too_distracted flag
+  def test_dm_off_no_engagement_block(self):
+    DM = DriverMonitoring(always_on=False)
+    for idx in range(len(always_distracted)):
+      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
+      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
+    assert not DM.too_distracted
+
+  # DM on (always_on=True), engaged, always distracted
+  #  - should still produce distraction events as before
+  def test_dm_on_still_produces_events(self):
+    DM = DriverMonitoring(always_on=True)
+    events = []
+    for idx in range(len(always_distracted)):
+      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
+      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
+      events.append(DM.current_events)
+    has_events = any(len(e) > 0 for e in events)
+    assert has_events, "DM on should produce distraction events"
+
 
 @pytest.mark.parametrize("enabled_state, lat_active_state, expected", [
   (False, False, False), # Both Disabled
