@@ -174,8 +174,8 @@ class TestMonitoring:
     assert events[int((INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)].names[0] == EventName.driverUnresponsive
     assert len(events[int((INVISIBLE_SECONDS_TO_RED+_visible_time+1+0.1)/DT_DMON)]) == 0
 
-  # disengaged, always distracted driver
-  #  - dm should stay quiet when not engaged
+  # disengaged, always distracted driver, DM off
+  #  - dm should stay quiet when DM is disabled
   def test_pure_dashcam_user(self):
     events, _ = self._run_seq(always_distracted, always_false, always_false, always_false, always_on=False)
     assert sum(len(event) for event in events) == 0
@@ -208,43 +208,25 @@ class TestMonitoring:
   # DM off (always_on=False), engaged, always distracted
   #  - should produce no events when DM is disabled
   def test_dm_off_suppresses_distracted_events(self):
-    DM = DriverMonitoring(always_on=False)
-    events = []
-    for idx in range(len(always_distracted)):
-      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
-      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
-      events.append(DM.current_events)
+    events, _ = self._run_seq(always_distracted, always_false, always_true, always_false, always_on=False)
     self._assert_no_events(events)
 
   # DM off (always_on=False), engaged, no face detected
   #  - should produce no events when DM is disabled
   def test_dm_off_suppresses_invisible_events(self):
-    DM = DriverMonitoring(always_on=False)
-    events = []
-    for idx in range(len(always_no_face)):
-      DM._update_states(always_no_face[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
-      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
-      events.append(DM.current_events)
+    events, _ = self._run_seq(always_no_face, always_false, always_true, always_false, always_on=False)
     self._assert_no_events(events)
 
   # DM off (always_on=False), engaged, distracted past terminal threshold
   #  - should never set too_distracted flag
   def test_dm_off_no_engagement_block(self):
-    DM = DriverMonitoring(always_on=False)
-    for idx in range(len(always_distracted)):
-      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
-      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
+    _, DM = self._run_seq(always_distracted, always_false, always_true, always_false, always_on=False)
     assert not DM.too_distracted
 
   # DM on (always_on=True), engaged, always distracted
   #  - should still produce distraction events as before
   def test_dm_on_still_produces_events(self):
-    DM = DriverMonitoring(always_on=True)
-    events = []
-    for idx in range(len(always_distracted)):
-      DM._update_states(always_distracted[idx], [0, 0, 0], 0, always_true[idx], always_false[idx])
-      DM._update_events(always_false[idx], always_true[idx], always_false[idx], 0, 0)
-      events.append(DM.current_events)
+    events, _ = self._run_seq(always_distracted, always_false, always_true, always_false)
     has_events = any(len(e) > 0 for e in events)
     assert has_events, "DM on should produce distraction events"
 
