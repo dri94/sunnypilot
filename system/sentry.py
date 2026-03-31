@@ -11,6 +11,7 @@ from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.manager.process_config import NETWORK_MODE_PRIVACY
 from openpilot.system.version import get_build_metadata, get_version
 
 from openpilot.sunnypilot.sunnylink.api import UNREGISTERED_SUNNYLINK_DONGLE_ID
@@ -118,7 +119,7 @@ def init(project: SentryProject) -> bool:
   # Don't initialize sentry in Privacy or Offline mode
   params = Params()
   mode = params.get("NetworkMode")
-  if mode is not None and mode >= 1:  # Privacy or Offline
+  if mode is not None and mode >= NETWORK_MODE_PRIVACY:  # Privacy or Offline
     return False
 
   build_metadata = get_build_metadata()

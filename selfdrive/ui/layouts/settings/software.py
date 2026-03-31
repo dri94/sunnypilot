@@ -9,6 +9,7 @@ from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
+from openpilot.system.manager.process_config import NETWORK_MODE_OFFLINE
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 if gui_app.sunnypilot_ui():
@@ -156,7 +157,7 @@ class SoftwareLayout(Widget):
   def _on_download_update(self):
     # In Offline mode, set bypass param so updated process can start
     network_mode = ui_state.params.get("NetworkMode")
-    if network_mode is not None and network_mode >= 2:
+    if network_mode is not None and network_mode >= NETWORK_MODE_OFFLINE:
       ui_state.params.put_bool("NetworkBypassOTA", True)
 
     # Check if we should start checking or start downloading

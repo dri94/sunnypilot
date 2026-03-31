@@ -83,10 +83,6 @@ def not_privacy_mode(started: bool, params: Params, CP: car.CarParams) -> bool:
   """Returns False in Privacy or Offline mode. Gates uploaders, sentry, stats."""
   return _get_network_mode(params) < NETWORK_MODE_PRIVACY
 
-def not_offline_mode(started: bool, params: Params, CP: car.CarParams) -> bool:
-  """Returns False in Offline mode. Gates athenad, registration."""
-  return _get_network_mode(params) < NETWORK_MODE_OFFLINE
-
 def updated_with_bypass(started: bool, params: Params, CP: car.CarParams) -> bool:
   """Gates OTA updates. Off in Offline unless NetworkBypassOTA is set."""
   mode = _get_network_mode(params)

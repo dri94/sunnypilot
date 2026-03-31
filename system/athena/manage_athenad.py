@@ -36,6 +36,10 @@ def manage_athenad(dongle_id_param, pid_param, process_name, target):
     cloudlog.info(f"{process_name} disabled by NetworkMode (Offline)")
     while True:
       time.sleep(60)
+      mode = params.get("NetworkMode")
+      if mode is None or mode < NETWORK_MODE_OFFLINE:
+        cloudlog.info(f"{process_name} NetworkMode changed, starting")
+        break
 
   try:
     while 1:
