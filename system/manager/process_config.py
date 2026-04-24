@@ -3,7 +3,7 @@ import operator
 import platform
 
 from cereal import car, custom
-from openpilot.common.params import Params
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.hardware import PC, TICI
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 from openpilot.system.hardware.hw import Paths
@@ -73,19 +73,33 @@ NETWORK_MODE_DEFAULT = 0
 NETWORK_MODE_PRIVACY = 1
 NETWORK_MODE_OFFLINE = 2
 
-def _get_network_mode(params: Params) -> int:
-  mode = params.get("NetworkMode")
+def get_network_mode(params: Params) -> int:
+  """Single source of truth for reading the NetworkMode param.
+
+  Fail-closed policy: if the key cannot be read — UnknownKeyName (compiled
+  params binary pre-rebuild) or a None return — fall back to NETWORK_MODE_PRIVACY.
+  This keeps telemetry (uploader / sentry / stats) off until the read works,
+  while preserving functional connectivity (athena, registration, OTA, SSH).
+  Driver monitoring is unaffected in all cases; it is not gated by NetworkMode.
+
+  Note: a healthy device reads NetworkMode as 0 (Default) from the params_keys.h
+  default value, so this fallback only triggers in pathological states.
+  """
+  try:
+    mode = params.get("NetworkMode")
+  except UnknownKeyName:
+    return NETWORK_MODE_PRIVACY
   if mode is None:
-    return NETWORK_MODE_DEFAULT
+    return NETWORK_MODE_PRIVACY
   return mode
 
 def not_privacy_mode(started: bool, params: Params, CP: car.CarParams) -> bool:
   """Returns False in Privacy or Offline mode. Gates uploaders, sentry, stats."""
-  return _get_network_mode(params) < NETWORK_MODE_PRIVACY
+  return get_network_mode(params) < NETWORK_MODE_PRIVACY
 
 def updated_with_bypass(started: bool, params: Params, CP: car.CarParams) -> bool:
   """Gates OTA updates. Off in Offline unless NetworkBypassOTA is set."""
-  mode = _get_network_mode(params)
+  mode = get_network_mode(params)
   if mode < NETWORK_MODE_OFFLINE:
     return not started  # original only_offroad behavior
   return not started and params.get_bool("NetworkBypassOTA")

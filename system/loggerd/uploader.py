@@ -18,7 +18,7 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.manager.process_config import NETWORK_MODE_PRIVACY
+from openpilot.system.manager.process_config import NETWORK_MODE_PRIVACY, get_network_mode
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -254,8 +254,7 @@ def main(exit_event: threading.Event | None = None) -> None:
     offroad = params.get_bool("IsOffroad")
 
     # Defense-in-depth: skip uploads in Privacy or Offline mode
-    network_mode = params.get("NetworkMode")
-    if network_mode is not None and network_mode >= NETWORK_MODE_PRIVACY:
+    if get_network_mode(params) >= NETWORK_MODE_PRIVACY:
       if allow_sleep:
         time.sleep(60 if offroad else 5)
       continue

@@ -7,7 +7,7 @@ from openpilot.common.params import Params
 from openpilot.system.manager.process import launcher
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.manager.process_config import NETWORK_MODE_OFFLINE
+from openpilot.system.manager.process_config import NETWORK_MODE_OFFLINE, get_network_mode
 from openpilot.system.version import get_build_metadata
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
@@ -31,13 +31,11 @@ def manage_athenad(dongle_id_param, pid_param, process_name, target):
                        device=HARDWARE.get_device_type())
 
   # In Offline mode, don't start athenad
-  mode = params.get("NetworkMode")
-  if mode is not None and mode >= NETWORK_MODE_OFFLINE:
+  if get_network_mode(params) >= NETWORK_MODE_OFFLINE:
     cloudlog.info(f"{process_name} disabled by NetworkMode (Offline)")
     while True:
       time.sleep(60)
-      mode = params.get("NetworkMode")
-      if mode is None or mode < NETWORK_MODE_OFFLINE:
+      if get_network_mode(params) < NETWORK_MODE_OFFLINE:
         cloudlog.info(f"{process_name} NetworkMode changed, starting")
         break
 
